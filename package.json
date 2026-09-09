@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test --experimental-test-isolation=process"
+    "test": "bash run-tests.sh"
   },
   "dependencies": {
     "express": "^4.19.2",
