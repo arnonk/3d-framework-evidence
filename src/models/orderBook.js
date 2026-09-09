@@ -1,31 +1,25 @@
 // In-memory order book.
-const book = {
+const orderBook = {
   orders: [],        // all orders ever placed
   bySymbol: {},      // symbol -> array of all orders
 };
 
 function add(order) {
-  book.orders.push(order);
-  (book.bySymbol[order.symbol] = book.bySymbol[order.symbol] || []).push(order);
+  orderBook.orders.push(order);
+  (orderBook.bySymbol[order.symbol] = orderBook.bySymbol[order.symbol] || []).push(order);
   return order;
 }
 
 function find(id) {
-  return book.orders.find(o => o.id === id);
+  return orderBook.orders.find(o => o.id === id);
 }
 
 function all() {
-  return book.orders;
+  return orderBook.orders;
 }
 
-function getRestingOrders(symbol, side) {
-  const symbolOrders = book.bySymbol[symbol] || [];
-  return symbolOrders.filter(o => o.side === side && (o.remainingQty > 0 || o.status === 'accepted' || o.status === 'open' || o.status === 'partially_filled') && o.status !== 'filled' && o.status !== 'rejected' && o.status !== 'cancelled');
-}
-
-// Compute L2 aggregated depth [[price, qty]]
 function getDepth(symbol) {
-  const symbolOrders = book.bySymbol[symbol] || [];
+  const symbolOrders = orderBook.bySymbol[symbol] || [];
   const activeBids = {};
   const activeAsks = {};
 
@@ -39,12 +33,10 @@ function getDepth(symbol) {
     }
   }
 
-  // Bids descending by price
   const bids = Object.entries(activeBids)
     .map(([p, q]) => [Number(p), q])
     .sort((a, b) => b[0] - a[0]);
 
-  // Asks ascending by price
   const asks = Object.entries(activeAsks)
     .map(([p, q]) => [Number(p), q])
     .sort((a, b) => a[0] - b[0]);
@@ -53,10 +45,18 @@ function getDepth(symbol) {
 }
 
 function clear() {
-  book.orders.length = 0;
-  for (const key of Object.keys(book.bySymbol)) {
-    delete book.bySymbol[key];
+  orderBook.orders.length = 0;
+  for (const key of Object.keys(orderBook.bySymbol)) {
+    delete orderBook.bySymbol[key];
   }
 }
 
-module.exports = { book, add, find, all, getDepth, getRestingOrders, clear };
+// Ensure backward compatibility: book.book, book.orders, book.bySymbol, and exported functions
+orderBook.book = orderBook;
+orderBook.add = add;
+orderBook.find = find;
+orderBook.all = all;
+orderBook.getDepth = getDepth;
+orderBook.clear = clear;
+
+module.exports = orderBook;

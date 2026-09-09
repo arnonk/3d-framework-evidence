@@ -2,13 +2,21 @@ const router = require('express').Router();
 const orderService = require('../services/orderService');
 const { validateOrder } = require('../utils/validate');
 
-// Place an order (legacy callback style - do not break the response shape,
-// external partners parse these fields positionally in some integrations).
+// Place an order (legacy callback style - response shape strictly maintained)
 router.post('/orders', (req, res) => {
   const err = validateOrder(req.body);
   if (err) return res.status(400).json({ error: err });
-  orderService.placeOrder(req.body, (e, order) => {
-    if (e) return res.status(500).json({ error: e.message });
+
+  const orderPayload = {
+    ...req.body,
+    idempotencyKey: req.headers['idempotency-key'] || req.body.idempotencyKey || null,
+  };
+
+  orderService.placeOrder(orderPayload, (e, order) => {
+    if (e) {
+      const statusCode = e.statusCode || 500;
+      return res.status(statusCode).json({ error: e.message });
+    }
     res.status(201).json({ order_id: order.id, status: order.status, fee: order.fee });
   });
 });
