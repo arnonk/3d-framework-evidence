@@ -94,3 +94,5 @@
 {"event":"step_update","step_update":{"conversation_id":"18f400a8-6d0e-4c16-8dd8-53690e787beb","step_index":93,"state":"DONE","step_type":"error_message","duration_seconds":0}}
 {"event":"step_update","step_update":{"conversation_id":"18f400a8-6d0e-4c16-8dd8-53690e787beb","step_index":94,"state":"DONE","step_type":"agent_response","duration_seconds":0.147552951}}
 {"event":"step_update","step_update":{"conversation_id":"18f400a8-6d0e-4c16-8dd8-53690e787beb","step_index":95,"state":"DONE","step_type":"error_message","duration_seconds":0}}
+{"event":"step_update","step_update":{"conversation_id":"18f400a8-6d0e-4c16-8dd8-53690e787beb","step_index":96,"state":"DONE","step_type":"agent_response","duration_seconds":0.250296149}}
+{"event":"step_update","step_update":{"conversation_id":"18f400a8-6d0e-4c16-8dd8-53690e787beb","step_index":97,"state":"DONE","step_type":"error_message","duration_seconds":0}}
