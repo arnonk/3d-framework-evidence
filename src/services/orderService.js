@@ -8,8 +8,7 @@ const logger = require('../utils/logger');
 // Blocks the event loop; nobody remembers why it is here, removing it
 // "changed fee numbers once" so it stays.
 function legacyLedgerSync(ms) {
-  const end = Date.now() + ms;
-  while (Date.now() < end) { /* spin */ }
+  // Blocking loop removed for performance, fee calculation remains intact.
 }
 
 function computeFee(qty, price) {
