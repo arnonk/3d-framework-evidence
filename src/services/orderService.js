@@ -4,46 +4,34 @@
  * Core business logic for order placement, retrieval, and quoting.
  *
  * Changes from the original:
- *   1. Fee computation is now async (runs in a worker thread) so the 30 ms
- *      busy-wait no longer blocks the main event loop.  The fee arithmetic
- *      itself is byte-for-byte identical → fee amounts cannot change.
+ *   1. Fee computation is now async (runs in a persistent worker-thread pool)
+ *      so the 30 ms busy-wait no longer blocks the main event loop.  The fee
+ *      arithmetic itself is byte-for-byte identical → fee amounts cannot change.
  *   2. `placeOrder` checks the circuit breaker before creating the order.
  *   3. `placeOrder` is idempotent: supply `x-client-order-id` and duplicate
  *      calls within the TTL window return the cached first response.
- *   4. Successful placement emits an `order_updated` event (via orderBook) so
+ *   4. Successful placement emits a `trade_executed` event (via orderBook) so
  *      the WebSocket layer can broadcast trade-execution notifications.
  *   5. The public callback signatures are UNCHANGED so all existing callers
  *      (routes, tests) continue to work without modification.
  */
 
-const path = require('path');
-const { Worker } = require('worker_threads');
 const { Order } = require('../models/order');
 const book = require('../models/orderBook');
 const pricing = require('./pricingService');
 const circuitBreaker = require('./circuitBreaker');
 const idempotency = require('./idempotencyStore');
+const feePool = require('./feeWorkerPool');
 const config = require('../config');
 const logger = require('../utils/logger');
 
-const WORKER_PATH = path.join(__dirname, '../workers/feeWorker.js');
-
 /**
- * Run the fee computation in a dedicated worker thread.
+ * Run the fee computation in the persistent worker-thread pool.
+ * Workers stay alive between calls, eliminating per-request thread-spawn cost.
  * Returns a Promise<number>.
  */
 function computeFeeAsync(qty, price) {
-  return new Promise((resolve, reject) => {
-    const w = new Worker(WORKER_PATH, {
-      workerData: { qty, price, feeBps: config.defaultFeeBps },
-    });
-    w.once('message', ({ fee }) => resolve(fee));
-    w.once('error', reject);
-    // 'exit' with non-zero code: treat as an error.
-    w.once('exit', code => {
-      if (code !== 0) reject(new Error(`feeWorker exited with code ${code}`));
-    });
-  });
+  return feePool.computeFee(qty, price);
 }
 
 /**
@@ -68,8 +56,8 @@ function computeFee(qty, price) {
 /**
  * Place an order.
  *
- * @param {object} body          – validated request body.
- * @param {function} cb          – Node-style callback(err, order).
+ * @param {object} body             – validated request body.
+ * @param {function} cb             – Node-style callback(err, order).
  * @param {string}  [clientOrderId] – optional idempotency key
  *                                    (from x-client-order-id header).
  */
