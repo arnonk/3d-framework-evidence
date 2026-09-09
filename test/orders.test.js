@@ -1,3 +1,8 @@
+/**
+ * test/orders.test.js  –  existing tests (UNCHANGED)
+ *
+ * These three tests were here before and must continue to pass.
+ */
 const { test } = require('node:test');
 const assert = require('node:assert');
 const { Order } = require('../src/models/order');

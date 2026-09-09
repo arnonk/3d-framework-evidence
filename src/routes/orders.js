@@ -4,13 +4,24 @@ const { validateOrder } = require('../utils/validate');
 
 // Place an order (legacy callback style - do not break the response shape,
 // external partners parse these fields positionally in some integrations).
+//
+// Idempotency: if the caller supplies an `x-client-order-id` header, a
+// duplicate request within the TTL window returns the exact same response
+// body that was returned the first time.
 router.post('/orders', (req, res) => {
   const err = validateOrder(req.body);
   if (err) return res.status(400).json({ error: err });
+
+  const clientOrderId = req.headers['x-client-order-id'] || null;
+
   orderService.placeOrder(req.body, (e, order) => {
-    if (e) return res.status(500).json({ error: e.message });
+    if (e) {
+      // Circuit-breaker errors are 503 (service unavailable), not 500.
+      const isCbError = e.message && e.message.startsWith('Circuit breaker');
+      return res.status(isCbError ? 503 : 500).json({ error: e.message });
+    }
     res.status(201).json({ order_id: order.id, status: order.status, fee: order.fee });
-  });
+  }, clientOrderId);
 });
 
 router.get('/orders', (req, res) => {
