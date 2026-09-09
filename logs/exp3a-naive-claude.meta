@@ -1,1 +1,2 @@
 start 2026-09-09T11:27:41+03:00 model=claude-sonnet-4-6 prompt=/home/sandbox/exp/prompts/naive-v2.txt
+INTERVENTION LOG: 2026-09-09T12:23:56+03:00 killed 4 idle-hung 'node --test' processes (PIDs 11258 11474 11534 11806, 0% CPU, non-terminating event loop) under agy run exp3a-naive-claude; run resumed at step 156.

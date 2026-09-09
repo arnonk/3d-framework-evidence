@@ -75,9 +75,6 @@ before(async () => {
 });
 
 after(async () => {
-  // Do NOT shut down feePool here — the websocket test suite runs next and
-  // still needs the worker threads alive. feePool.shutdown() is called only
-  // once, in the last suite (websocket.test.js).
   await new Promise((r) => wsHub.close(() => server.close(r)));
 });
 
