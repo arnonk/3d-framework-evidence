@@ -12,9 +12,10 @@ class CircuitBreakerService {
     this.states = new Map();
 
     // Listen to price updates
-    eventBus.on(EVENTS.PRICE_UPDATED, ({ symbol, price, timestamp }) => {
+    this._priceUpdateListener = ({ symbol, price, timestamp }) => {
       this.recordPriceUpdate(symbol, price, timestamp);
-    });
+    };
+    eventBus.on(EVENTS.PRICE_UPDATED, this._priceUpdateListener);
   }
 
   _getState(symbol) {
@@ -37,6 +38,7 @@ class CircuitBreakerService {
         symState.state = 'CLOSED';
         symState.trippedAt = null;
         symState.tripReason = null;
+        symState.priceHistory = [{ price: symState.referencePrice, timestamp: Date.now() }];
         eventBus.emit(EVENTS.CIRCUIT_BREAKER_RESET, {
           symbol,
           state: 'CLOSED',
@@ -51,7 +53,10 @@ class CircuitBreakerService {
   setReferencePrice(symbol, price) {
     const symState = this._getState(symbol);
     symState.referencePrice = Number(price);
-    symState.priceHistory.push({ price: Number(price), timestamp: Date.now() });
+    symState.state = 'CLOSED';
+    symState.trippedAt = null;
+    symState.tripReason = null;
+    symState.priceHistory = [{ price: Number(price), timestamp: Date.now() }];
   }
 
   getPriceBand(symbol) {
@@ -65,11 +70,11 @@ class CircuitBreakerService {
 
   recordPriceUpdate(symbol, price, timestamp = Date.now()) {
     const symState = this._getState(symbol);
-    symState.referencePrice = price;
+    const numPrice = Number(price);
 
     const windowCutoff = timestamp - this.config.slidingWindowMs;
     symState.priceHistory = symState.priceHistory.filter(p => p.timestamp >= windowCutoff);
-    symState.priceHistory.push({ price, timestamp });
+    symState.priceHistory.push({ price: numPrice, timestamp });
 
     if (!this.config.enabled) return;
 
@@ -89,9 +94,13 @@ class CircuitBreakerService {
             symbol,
             `Volatility spike: ${(swing * 100).toFixed(2)}% price swing in sliding window (${minPrice} to ${maxPrice})`
           );
+          return;
         }
       }
     }
+
+    // Update reference price smoothly if not tripped
+    symState.referencePrice = numPrice;
   }
 
   validateOrder(symbol, price) {
@@ -181,6 +190,13 @@ class CircuitBreakerService {
 
   clear() {
     this.states.clear();
+  }
+
+  destroy() {
+    if (this._priceUpdateListener) {
+      eventBus.removeListener(EVENTS.PRICE_UPDATED, this._priceUpdateListener);
+    }
+    this.clear();
   }
 }
 
