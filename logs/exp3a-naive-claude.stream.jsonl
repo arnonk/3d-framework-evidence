@@ -422,3 +422,12 @@
 {"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":200,"state":"DONE","step_type":"error_message","duration_seconds":0}}
 {"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":201,"state":"DONE","step_type":"agent_response","duration_seconds":0.152999076}}
 {"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":202,"state":"DONE","step_type":"error_message","duration_seconds":0}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":203,"state":"DONE","step_type":"agent_response","duration_seconds":0.17427134}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":204,"state":"DONE","step_type":"error_message"}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":205,"state":"DONE","step_type":"system_message","duration_seconds":0.000236015}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":206,"state":"DONE","step_type":"system_message","duration_seconds":0.000232283}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":207,"state":"DONE","step_type":"system_message","duration_seconds":0.000228778}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":208,"state":"DONE","step_type":"agent_response","duration_seconds":0.127849148}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":209,"state":"DONE","step_type":"error_message","duration_seconds":0}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":210,"state":"DONE","step_type":"agent_response","duration_seconds":0.078218778}}
+{"event":"step_update","step_update":{"conversation_id":"16d10349-ba1f-4145-8f6c-11fbc91a18fd","step_index":211,"state":"DONE","step_type":"error_message","duration_seconds":0}}
