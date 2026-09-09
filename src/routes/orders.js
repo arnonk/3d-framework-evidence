@@ -1,17 +1,3 @@
-/**
- * routes/orders.js
- *
- * REST routes for order placement and retrieval.
- *
- * Response shapes are FROZEN — external partners parse them.
- * Do not rename or reorder fields in existing responses.
- *
- * Idempotency-Key header: clients may supply any opaque string.
- * The same order will not be placed twice for the same key within 24 h.
- * The response for a duplicate is identical to the original (HTTP 200, not 201).
- */
-'use strict';
-
 const router = require('express').Router();
 const orderService = require('../services/orderService');
 const { validateOrder } = require('../utils/validate');
@@ -21,25 +7,8 @@ const { validateOrder } = require('../utils/validate');
 router.post('/orders', (req, res) => {
   const err = validateOrder(req.body);
   if (err) return res.status(400).json({ error: err });
-
-  // Attach idempotency key from header (if provided) before passing to service.
-  const body = {
-    ...req.body,
-    idempotencyKey: req.headers['idempotency-key'] || null,
-  };
-
-  orderService.placeOrder(body, (e, order) => {
-    if (e) {
-      // Circuit-breaker trip: return 503 with retry guidance.
-      if (e.code === 'CIRCUIT_OPEN') {
-        return res.status(503).json({
-          error: e.message,
-          retriableAfterMs: e.retriableAfterMs,
-        });
-      }
-      return res.status(500).json({ error: e.message });
-    }
-    // FROZEN response shape: { order_id, status, fee }
+  orderService.placeOrder(req.body, (e, order) => {
+    if (e) return res.status(500).json({ error: e.message });
     res.status(201).json({ order_id: order.id, status: order.status, fee: order.fee });
   });
 });
