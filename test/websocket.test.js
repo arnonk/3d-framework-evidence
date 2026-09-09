@@ -18,6 +18,7 @@ const wsService = require('../src/services/wsService');
 const book = require('../src/models/orderBook');
 const idempotency = require('../src/services/idempotencyStore');
 const cb = require('../src/services/circuitBreaker');
+const feePool = require('../src/services/feeWorkerPool');
 
 // ── server lifecycle ──────────────────────────────────────────────────────────
 
@@ -34,10 +35,11 @@ before(() => new Promise(resolve => {
   });
 }));
 
-after(() => new Promise(resolve => {
+after(async () => {
   server.closeAllConnections();
-  server.close(resolve);
-}));
+  await new Promise(resolve => server.close(resolve));
+  await feePool.shutdown();
+});
 
 beforeEach(() => {
   book.book.orders = [];

@@ -6,9 +6,10 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test",
+    "test": "bash run-tests.sh",
     "test:unit": "node --test test/orders.test.js test/idempotency.test.js test/circuitBreaker.test.js test/feeWorker.test.js",
-    "test:integration": "node --test test/api.test.js test/websocket.test.js",
+    "test:api": "node --test test/api.test.js",
+    "test:ws": "node --test test/websocket.test.js",
     "test:latency": "node --test test/latency.test.js"
   },
   "dependencies": {

@@ -13,6 +13,7 @@ const app = require('../src/app');
 const book = require('../src/models/orderBook');
 const idempotency = require('../src/services/idempotencyStore');
 const cb = require('../src/services/circuitBreaker');
+const feePool = require('../src/services/feeWorkerPool');
 
 // ── test server lifecycle ─────────────────────────────────────────────────────
 
@@ -27,10 +28,11 @@ before(() => new Promise(resolve => {
   });
 }));
 
-after(() => new Promise(resolve => {
+after(async () => {
   server.closeAllConnections();
-  server.close(resolve);
-}));
+  await new Promise(resolve => server.close(resolve));
+  await feePool.shutdown();
+});
 
 beforeEach(() => {
   // Reset shared state between tests.

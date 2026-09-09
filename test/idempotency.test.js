@@ -6,10 +6,14 @@
  */
 'use strict';
 
-const { test, before, afterEach } = require('node:test');
+const { test, after, afterEach } = require('node:test');
 const assert = require('node:assert');
 
 const store = require('../src/services/idempotencyStore');
+const feePool = require('../src/services/feeWorkerPool');
+
+// Shut down the persistent fee worker pool when all tests finish so the process exits cleanly.
+after(() => feePool.shutdown());
 
 // ── store unit tests ───────────────────────────────────────────────────────────
 

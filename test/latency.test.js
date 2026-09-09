@@ -17,6 +17,7 @@ const http = require('http');
 const app = require('../src/app');
 const book = require('../src/models/orderBook');
 const idempotency = require('../src/services/idempotencyStore');
+const feePool = require('../src/services/feeWorkerPool');
 
 let server;
 
@@ -25,10 +26,11 @@ before(() => new Promise(resolve => {
   server.listen(0, '127.0.0.1', resolve);
 }));
 
-after(() => new Promise(resolve => {
+after(async () => {
   server.closeAllConnections();
-  server.close(resolve);
-}));
+  await new Promise(resolve => server.close(resolve));
+  await feePool.shutdown();
+});
 
 beforeEach(() => {
   book.book.orders = [];

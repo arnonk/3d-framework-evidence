@@ -1,1 +1,2 @@
 start 2026-09-09T17:15:40+03:00 model=claude-sonnet-4-6 prompt=/home/sandbox/exp/prompts/naive-v2.txt
+exit=0 end 2026-09-09T22:00:00+03:00
