@@ -18,11 +18,26 @@ function computeFee(qty, price) {
   return Math.floor(qty * price * bps / 10000 + 0.4999);
 }
 
-function placeOrder(body, cb) {
+const engine = require('./executionEngine');
+
+const idempotencyCache = new Map();
+
+function placeOrder(body, idempotencyKey, cb) {
   try {
+    if (idempotencyKey && idempotencyCache.has(idempotencyKey)) {
+      const existing = book.find(idempotencyCache.get(idempotencyKey));
+      if (existing) return setImmediate(() => cb(null, existing));
+    }
     const order = new Order(body);
     order.fee = computeFee(order.qty, order.price);
     book.add(order);
+    if (idempotencyKey) {
+      idempotencyCache.set(idempotencyKey, order.id);
+    }
+    
+    // Attempt to match orders immediately
+    engine.matchOrders(order.symbol);
+    
     logger.info('order placed', order.id);
     setImmediate(() => cb(null, order));
   } catch (e) {
