@@ -1,1 +1,2 @@
 start 2026-09-09T10:36:44+03:00 model=gemini-3.7-flash-high prompt=/home/sandbox/exp/prompts/naive-v2.txt
+exit=0 end 2026-09-09T10:52:00+03:00
