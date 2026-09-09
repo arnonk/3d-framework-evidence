@@ -1,3 +1,11 @@
+'use strict';
+/**
+ * test/orders.test.js — original tests (must keep passing unchanged).
+ *
+ * The fee test calls the synchronous computeFee shim exported from
+ * orderService, which still runs legacyLedgerSync inline. That's fine for
+ * the test runner; the shim is not used on the hot acknowledgement path.
+ */
 const { test } = require('node:test');
 const assert = require('node:assert');
 const { Order } = require('../src/models/order');
