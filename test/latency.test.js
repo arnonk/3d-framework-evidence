@@ -25,7 +25,10 @@ before(() => new Promise(resolve => {
   server.listen(0, '127.0.0.1', resolve);
 }));
 
-after(() => new Promise(resolve => server.close(resolve)));
+after(() => new Promise(resolve => {
+  server.closeAllConnections();
+  server.close(resolve);
+}));
 
 beforeEach(() => {
   book.book.orders = [];

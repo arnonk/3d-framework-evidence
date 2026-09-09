@@ -1,3 +1,4 @@
 2026-09-09T15:09:49+03:00 killed hung node --test (pid 3921, 0% CPU 3+ min, orders.test.js)
 2026-09-09T15:12:00+03:00 attempt 2 killed: Claude pool 429 RESOURCE_EXHAUSTED at step 100, reset ~16:27 IDT; rerun scheduled after reset
 2026-09-09T17:15:20+03:00 attempt 3 CONFOUNDED: agent drifted to sibling pristine dir exp3b-spec-claude (env fault - sibling pre-created), subagent workspace moved mid-run, status ERROR at step 63, 155,536 tokens, 30 min. Rerun as attempt 4 with no stray dirs.
+2026-09-09T18:31:57+03:00 killed hung node --test (pids 6984 6985, 0% CPU 3.5min) during attempt 4
