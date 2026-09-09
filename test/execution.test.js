@@ -5,8 +5,8 @@ const engine = require('../src/services/executionEngine');
 const book = require('../src/models/orderBook');
 
 test('execution engine matches orders and applies circuit breaker', () => {
-  book.orders.length = 0;
-  for (let key in book.bySymbol) delete book.bySymbol[key];
+  book.book.orders.length = 0;
+  for (let key in book.book.bySymbol) delete book.book.bySymbol[key];
   engine.circuitBreakers['AAPL'] = null;
 
   const buy = new Order({ symbol: 'AAPL', side: 'buy', qty: 10, price: 150 });
@@ -25,9 +25,17 @@ test('execution engine matches orders and applies circuit breaker', () => {
   assert.equal(sell.qty, 0);
   assert.equal(sell.status, 'executed');
 
-  // Trigger circuit breaker with a 15% price drop (reference price was 150)
+  // Trigger circuit breaker with a 20% price drop (reference price was 150)
+  // To get a trade at 120, we need a resting order at 120 and a new order to cross it.
+  // The buy order at 150 is still there, let's cancel/remove it first by setting qty to 0.
+  buy.qty = 0;
+  buy.status = 'executed';
+  
+  const buy2 = new Order({ symbol: 'AAPL', side: 'buy', qty: 5, price: 120 });
   const sell2 = new Order({ symbol: 'AAPL', side: 'sell', qty: 5, price: 120 });
+  book.add(buy2);
   book.add(sell2);
+  
   let breakerHalted = false;
   engine.engineEvents.on('circuit_breaker', (d) => { if(d.state==='halted') breakerHalted = true; });
   engine.matchOrders('AAPL');

@@ -5,7 +5,7 @@ const book = require('../models/orderBook');
 const circuitBreakers = {};
 
 function getBookOrders(symbol) {
-  return book.bySymbol[symbol] || [];
+  return book.book.bySymbol[symbol] || [];
 }
 
 function matchOrders(symbol) {
