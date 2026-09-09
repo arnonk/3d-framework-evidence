@@ -19,7 +19,6 @@ const idempotency = require('../src/services/idempotency');
 const circuitBreaker = require('../src/services/circuitBreaker');
 const orderBook = require('../src/models/orderBook');
 const wsHub = require('../src/services/wsHub');
-const feePool = require('../src/workers/feePool');
 
 let server;
 let baseUrl;
@@ -76,7 +75,9 @@ before(async () => {
 });
 
 after(async () => {
-  await feePool.shutdown();
+  // Do NOT shut down feePool here — the websocket test suite runs next and
+  // still needs the worker threads alive. feePool.shutdown() is called only
+  // once, in the last suite (websocket.test.js).
   await new Promise((r) => wsHub.close(() => server.close(r)));
 });
 
