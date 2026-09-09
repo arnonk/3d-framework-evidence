@@ -1,15 +1,14 @@
 {
   "name": "order-service",
-  "version": "2.0.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Real-time trade execution engine (extended from internal order routing service)",
+  "description": "Internal order routing service",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test test/orders.test.js"
+    "test": "node --test"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "ws": "^8.18.0"
+    "express": "^4.19.2"
   }
 }
