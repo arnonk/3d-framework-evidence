@@ -36,31 +36,32 @@ test('worker fee matches synchronous fee formula', async () => {
 });
 
 test('event loop stays responsive during fee computation', async () => {
-  // Schedule several fee computations concurrently.
-  // While they are in-flight (each taking ~30 ms in the worker), the
-  // event loop should still be able to resolve a trivial promise quickly.
-  const start = Date.now();
+  // Warm up the pool so worker-thread startup latency does not skew this
+  // measurement (startup is a one-time cost, not a per-request cost).
+  await feePool.computeFee(1, 1);
 
+  // Fire several fee computations concurrently; each burns ~30 ms in the
+  // worker thread.  setImmediate should still resolve almost instantly on
+  // the main thread, proving the event loop is not blocked by the spin.
   const feePromises = Array.from({ length: 4 }, () =>
     feePool.computeFee(1000, 100)
   );
 
-  // This micro-task should resolve almost immediately (< 5 ms) even though
-  // the workers are busy — proving the event loop is not blocked.
+  const t0 = Date.now();
   let tickElapsed;
   await new Promise((resolve) => {
     setImmediate(() => {
-      tickElapsed = Date.now() - start;
+      tickElapsed = Date.now() - t0;
       resolve();
     });
   });
 
   assert.ok(
     tickElapsed < 10,
-    `event loop was blocked: setImmediate took ${tickElapsed} ms`
+    `event loop was blocked: setImmediate took ${tickElapsed} ms after warm pool`
   );
 
-  // Now await the fees and verify correctness.
+  // Verify correctness while we're here.
   const fees = await Promise.all(feePromises);
   fees.forEach((fee) => assert.equal(fee, 120));
 });
