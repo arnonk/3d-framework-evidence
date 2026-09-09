@@ -1,6 +1,5 @@
 const config = require('../config');
 
-// NOTE: validation is duplicated here and partially re-checked in orderService.
 function validateOrder(body) {
   if (!body || typeof body !== 'object') return 'body required';
   if (!body.symbol || typeof body.symbol !== 'string') return 'symbol required';
@@ -10,4 +9,5 @@ function validateOrder(body) {
   if (!Number.isFinite(body.price) || body.price <= 0) return 'price must be positive';
   return null;
 }
+
 module.exports = { validateOrder };

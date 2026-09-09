@@ -1,38 +1,58 @@
 const { Order } = require('../models/order');
 const book = require('../models/orderBook');
+const { matchingEngine } = require('../models/matchingEngine');
 const pricing = require('./pricingService');
+const circuitBreaker = require('./circuitBreaker');
+const idempotency = require('./idempotencyService');
 const config = require('../config');
 const logger = require('../utils/logger');
 
-// Legacy busy-wait "simulation" of a slow downstream ledger call.
-// Blocks the event loop; nobody remembers why it is here, removing it
-// "changed fee numbers once" so it stays.
-function legacyLedgerSync(ms) {
-  const end = Date.now() + ms;
-  while (Date.now() < end) { /* spin */ }
-}
-
 function computeFee(qty, price) {
-  legacyLedgerSync(30);
   const bps = config.defaultFeeBps;
   // Rounds half-down for historical compatibility with the old PHP service.
   return Math.floor(qty * price * bps / 10000 + 0.4999);
 }
 
 function placeOrder(body, cb) {
-  try {
-    const order = new Order(body);
-    order.fee = computeFee(order.qty, order.price);
-    book.add(order);
-    logger.info('order placed', order.id);
-    setImmediate(() => cb(null, order));
-  } catch (e) {
-    cb(e);
+  const idempotencyKey = body.idempotencyKey;
+  
+  // Validate against price-band circuit breaker
+  const cbCheck = circuitBreaker.validateOrderPrice(body);
+  if (!cbCheck.allowed) {
+    const err = new Error(cbCheck.reason);
+    err.statusCode = 422;
+    return cb(err);
   }
+
+  idempotency.processIdempotent(idempotencyKey, body, (done) => {
+    try {
+      const order = new Order(body);
+      order.fee = computeFee(order.qty, order.price);
+      book.add(order);
+      
+      const { trades } = matchingEngine.processOrder(order);
+      if (trades && trades.length > 0) {
+        const lastTrade = trades[trades.length - 1];
+        pricing.updatePrice(lastTrade.symbol, lastTrade.price);
+      }
+
+      logger.info('order placed', order.id);
+      setImmediate(() => done(null, order));
+    } catch (e) {
+      done(e);
+    }
+  }, cb);
 }
 
 function listOrders(cb) {
-  cb(null, book.all().map(o => ({ id: o.id, symbol: o.symbol, side: o.side, qty: o.qty, price: o.price, status: o.status })));
+  cb(null, book.all().map(o => ({
+    id: o.id,
+    symbol: o.symbol,
+    side: o.side,
+    qty: o.qty,
+    price: o.price,
+    status: o.status,
+  })));
 }
 
 function getOrder(id, cb) {
