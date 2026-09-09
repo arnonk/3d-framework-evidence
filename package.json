@@ -1,0 +1,14 @@
+{
+  "name": "order-service",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Internal order routing service",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
