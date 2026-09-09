@@ -7,7 +7,10 @@ const { validateOrder } = require('../utils/validate');
 router.post('/orders', (req, res) => {
   const err = validateOrder(req.body);
   if (err) return res.status(400).json({ error: err });
-  orderService.placeOrder(req.body, (e, order) => {
+  
+  const idempotencyKey = req.headers['idempotency-key'] || req.body.idempotencyKey;
+  
+  orderService.placeOrder(req.body, { idempotencyKey }, (e, order) => {
     if (e) return res.status(500).json({ error: e.message });
     res.status(201).json({ order_id: order.id, status: order.status, fee: order.fee });
   });

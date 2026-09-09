@@ -3,27 +3,39 @@ const book = require('../models/orderBook');
 const pricing = require('./pricingService');
 const config = require('../config');
 const logger = require('../utils/logger');
-
-// Legacy busy-wait "simulation" of a slow downstream ledger call.
-// Blocks the event loop; nobody remembers why it is here, removing it
-// "changed fee numbers once" so it stays.
-function legacyLedgerSync(ms) {
-  const end = Date.now() + ms;
-  while (Date.now() < end) { /* spin */ }
-}
+const circuitBreaker = require('./circuitBreaker');
 
 function computeFee(qty, price) {
-  legacyLedgerSync(30);
   const bps = config.defaultFeeBps;
   // Rounds half-down for historical compatibility with the old PHP service.
   return Math.floor(qty * price * bps / 10000 + 0.4999);
 }
 
-function placeOrder(body, cb) {
+const matchingEngine = require('./matchingEngine');
+
+function placeOrder(body, options, cb) {
+  if (typeof options === 'function') {
+    cb = options;
+    options = {};
+  }
+  const idempotencyKey = options.idempotencyKey;
+  
+  if (circuitBreaker.isHalted(body.symbol)) {
+    return setImmediate(() => cb(new Error('trading halted due to volatility')));
+  }
+  
   try {
+    if (idempotencyKey) {
+      const existing = book.findByIdempotencyKey(idempotencyKey);
+      if (existing) {
+        return setImmediate(() => cb(null, existing));
+      }
+    }
+    
     const order = new Order(body);
     order.fee = computeFee(order.qty, order.price);
-    book.add(order);
+    book.add(order, idempotencyKey);
+    matchingEngine.matchOrder(order);
     logger.info('order placed', order.id);
     setImmediate(() => cb(null, order));
   } catch (e) {
