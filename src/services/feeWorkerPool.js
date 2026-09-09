@@ -5,8 +5,11 @@
  * Workers stay alive between requests, eliminating the ~30 ms thread-spawn
  * overhead that would otherwise blow the p99 budget.
  *
- * The pool is initialised lazily on first use and is module-scoped so it is
- * shared across all callers in the same process.
+ * Lifecycle:
+ *   • Workers are unref'd when idle (so the process can exit naturally in tests
+ *     and after server shutdown without calling shutdown() explicitly).
+ *   • Workers are ref'd while they hold a pending computation (so the promise
+ *     resolves even if the event loop would otherwise be empty).
  *
  * Usage:
  *   const pool = require('./feeWorkerPool');
@@ -20,13 +23,12 @@ const config = require('../config');
 
 const WORKER_SCRIPT = path.join(__dirname, '../workers/feeWorkerPoolEntry.js');
 
-// Number of persistent workers.  One is enough for our sequential workload;
-// increase if you parallelise order placement in the future.
+// Number of persistent workers.
 const POOL_SIZE = Number(process.env.FEE_WORKER_POOL_SIZE) || 2;
 
-// Each slot: { worker: Worker, busy: bool, resolve: fn|null, reject: fn|null }
+// Each slot: { worker, busy }
 const pool = [];
-// Queue of pending { qty, price, resolve, reject } items waiting for a free worker.
+// Queue of pending { qty, price, resolve, reject }
 const queue = [];
 
 function makeWorker() {
@@ -34,31 +36,36 @@ function makeWorker() {
 
   const w = new Worker(WORKER_SCRIPT);
 
+  // Start unref'd – won't keep process alive when idle.
+  w.unref();
+
   w.on('message', ({ fee, error }) => {
     const { resolve, reject } = slot;
     slot.resolve = null;
     slot.reject  = null;
     slot.busy    = false;
 
-    if (error) {
-      reject(new Error(error));
-    } else {
-      resolve(fee);
-    }
+    // Worker is now idle – unref again so the process can exit.
+    w.unref();
 
-    // Drain one item from the queue, if any.
+    if (error) reject(new Error(error));
+    else       resolve(fee);
+
+    // Drain one queued item, if any.
     if (queue.length > 0) {
-      const next = queue.shift();
-      dispatch(slot, next);
+      dispatch(slot, queue.shift());
     }
   });
 
   w.on('error', err => {
-    if (slot.reject) slot.reject(err);
+    const { reject } = slot;
     slot.resolve = null;
     slot.reject  = null;
     slot.busy    = false;
-    // Replace the broken worker.
+    w.unref();
+    if (reject) reject(err);
+
+    // Replace the broken worker with a fresh one.
     const idx = pool.indexOf(slot);
     if (idx !== -1) pool.splice(idx, 1);
     pool.push(makeWorker());
@@ -72,6 +79,8 @@ function dispatch(slot, { qty, price, resolve, reject }) {
   slot.busy    = true;
   slot.resolve = resolve;
   slot.reject  = reject;
+  // ref while busy so the promise resolves even if the loop is otherwise empty.
+  slot.worker.ref();
   slot.worker.postMessage({ qty, price, feeBps: config.defaultFeeBps });
 }
 
@@ -84,7 +93,6 @@ function initPool() {
  * Returns a Promise<number> that resolves once a pool worker finishes.
  */
 function computeFee(qty, price) {
-  // Lazy init on first call.
   if (pool.length === 0) initPool();
 
   return new Promise((resolve, reject) => {

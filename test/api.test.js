@@ -27,7 +27,10 @@ before(() => new Promise(resolve => {
   });
 }));
 
-after(() => new Promise(resolve => server.close(resolve)));
+after(() => new Promise(resolve => {
+  server.closeAllConnections();
+  server.close(resolve);
+}));
 
 beforeEach(() => {
   // Reset shared state between tests.
