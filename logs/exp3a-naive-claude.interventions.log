@@ -1,0 +1,2 @@
+2026-09-09T15:09:49+03:00 killed hung node --test (pid 3921, 0% CPU 3+ min, orders.test.js)
+2026-09-09T15:12:00+03:00 attempt 2 killed: Claude pool 429 RESOURCE_EXHAUSTED at step 100, reset ~16:27 IDT; rerun scheduled after reset
