@@ -1,1 +1,2 @@
 2026-09-17T10:22:22+03:00 Sep17 attempt upstream reset #1 at 10:12 and #2 at 10:22 during architect before docs; auto-retry, one process.
+2026-09-17T10:42:58+03:00 Sep17 fresh attempt stopped after four upstream long-stream resets before SPEC/TASKS. Repeated infrastructure failure; non-final.
